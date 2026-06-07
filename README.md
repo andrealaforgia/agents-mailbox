@@ -12,13 +12,16 @@ only when it asks, so nothing runs in the background and there is no API cost.
    per agent, from inside that agent's project directory:
 
    ```
-   ./register-mailbox.sh alice
-   ./register-mailbox.sh bob
-   ./register-mailbox.sh auditor
+   cd ~/work/implementer && /path/to/agents-mailbox/register-mailbox.sh implementer
+   cd ~/work/verifier    && /path/to/agents-mailbox/register-mailbox.sh verifier
+   cd ~/work/auditor     && /path/to/agents-mailbox/register-mailbox.sh auditor
    ```
 
-   They all share one folder (default `~/.agent-mailbox`). Use `--dir <path>` to
-   change it and `--scope user` to make a registration apply everywhere for you.
+   You do not copy the script; call it by its absolute path. The default scope is
+   per-directory, which is how each session gets its own identity, so run it once in
+   each agent's working directory. They all share one folder (default
+   `~/.agent-mailbox`). Use `--dir <path>` to change it and `--scope user` to make a
+   registration apply everywhere for you.
 
 2. **Start (or restart) each agent.** A newly registered MCP server is only picked up
    when a Claude Code session starts. An already-running agent will not see the
@@ -80,6 +83,10 @@ Under the shared folder (default `~/.agent-mailbox`):
 <name>/read/    messages <name> has read
 .audit/         immutable copy of every message ever sent
 ```
+
+A folder appears only when someone sends to that agent, so a pure sender or observer
+(such as an auditor) never gets a mailbox folder of its own. The full history still
+lives in `.audit/`, which is immutable and untouched by reads.
 
 Messages are small JSON files (`{id, from, to, ts, body}`) written atomically
 (temp file, fsync, rename) so a reader never sees a half-written message.

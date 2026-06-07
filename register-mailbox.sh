@@ -46,7 +46,8 @@ fi
 PYTHON="$(command -v python3 || true)"
 [[ -n "$PYTHON" ]] || { echo "error: python3 not found" >&2; exit 1; }
 
-mkdir -p "$DIR/$AGENT/inbox"
+# No mailbox folder is created here: an agent's inbox appears only when someone
+# sends to it, so a pure sender/observer (e.g. an auditor) leaves no folder.
 
 # --- (re)register -----------------------------------------------------------
 # Remove any existing "mailbox" entry in this scope so re-running is idempotent.

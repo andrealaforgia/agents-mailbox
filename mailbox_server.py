@@ -246,7 +246,8 @@ def main():
     ap.add_argument("--dir", default=os.path.expanduser("~/.agent-mailbox"), help="shared mailbox folder")
     opts = ap.parse_args()
     root = os.path.abspath(opts.dir)
-    os.makedirs(os.path.join(root, opts.me, "inbox"), exist_ok=True)
+    # No eager inbox creation: a folder appears only when someone sends to that
+    # agent. A pure sender/observer (e.g. an auditor) never gets a mailbox folder.
 
     for line in sys.stdin:
         line = line.strip()
