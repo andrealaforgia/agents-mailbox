@@ -12,9 +12,9 @@ only when it asks, so nothing runs in the background and there is no API cost.
    per agent, from inside that agent's project directory:
 
    ```
-   cd ~/work/implementer && /path/to/agents-mailbox/register-mailbox.sh implementer
-   cd ~/work/verifier    && /path/to/agents-mailbox/register-mailbox.sh verifier
-   cd ~/work/auditor     && /path/to/agents-mailbox/register-mailbox.sh auditor
+   cd ~/work/alice   && /path/to/agents-mailbox/register-mailbox.sh alice
+   cd ~/work/bob     && /path/to/agents-mailbox/register-mailbox.sh bob
+   cd ~/work/auditor && /path/to/agents-mailbox/register-mailbox.sh auditor
    ```
 
    You do not copy the script; call it by its absolute path. The default scope is
