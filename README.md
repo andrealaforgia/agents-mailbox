@@ -31,6 +31,18 @@ only when it asks, so nothing runs in the background and there is no API cost.
 3. **Use it.** Each agent now has these tools: `send`, `inbox`, `peek`, `who`,
    `thread`.
 
+## Unregister an agent
+
+```
+./register-mailbox.sh --remove            # in the agent's directory (local scope)
+./register-mailbox.sh --remove --scope user
+```
+
+This detaches the `mailbox` tools from that agent (restart the agent for it to take
+effect). It leaves the mailbox data alone: the agent's `inbox/`/`read/` folders and
+the immutable `.audit/` log stay put. To also clear an agent's mailbox, delete its
+folder, e.g. `rm -rf ~/.agent-mailbox/alice`; the `.audit/` history is kept on purpose.
+
 ## A worked example
 
 Two agents, alice and bob, in two terminals.
