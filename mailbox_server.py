@@ -10,22 +10,19 @@ identity. The server exposes these tools to that agent:
     inbox()         -> returns my unread messages and moves them to my read/ folder
     peek()          -> returns my unread messages WITHOUT marking them read
     who()           -> lists the agent names that have a mailbox
-    thread(a, b)    -> the full two-way conversation between agents a and b,
-                       in time order (for auditing); read-only
 
 Storage layout (under --dir, default ~/.agent-mailbox):
 
     <name>/inbox/<ts>-<id>.json   unread, addressed to <name>
     <name>/read/<ts>-<id>.json    already read
-    .audit/<ts>-<id>.json         immutable copy of EVERY message ever sent
 
 A message file is {"id","from","to","ts","body"}, written atomically
 (temp file + fsync + rename) so a reader never sees a half-written message.
 
-Auditability: every send also writes a permanent copy to .audit/, which reads
-never touch. A Communication Auditor agent can call thread(a, b) to see the
-exact sequence exchanged between two agents, then send(a, ...) / send(b, ...)
-to give each its feedback. The auditor's own feedback messages are logged too.
+This server does messaging only and knows nothing about auditing. A message is
+just a file in the shared folder, so anything that wants to inspect the traffic
+(an auditor, a log viewer) reads those files itself; see audit.py for one such
+reader.
 
 Add to an agent (one line per agent, each with its own --as name):
 
@@ -72,21 +69,7 @@ TOOLS = [
         "description": "List the agent names that currently have a mailbox.",
         "inputSchema": {"type": "object", "properties": {}},
     },
-    {
-        "name": "thread",
-        "description": "Audit tool: the full two-way conversation between agents a and b, in time order.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "a": {"type": "string", "description": "First agent name."},
-                "b": {"type": "string", "description": "Second agent name."},
-            },
-            "required": ["a", "b"],
-        },
-    },
 ]
-
-AUDIT_DIR = ".audit"
 
 
 def now_parts():
@@ -122,8 +105,6 @@ def tool_send(root, me, args):
     mid = f"{stamp}-{uuid.uuid4().hex[:6]}"
     msg = {"id": mid, "from": me, "to": to, "ts": iso, "body": body}
     payload = json.dumps(msg, ensure_ascii=False, indent=2)
-    # 1) permanent audit copy (reads never touch this); 2) delivery into recipient inbox
-    atomic_write(os.path.join(root, AUDIT_DIR, f"{mid}.json"), payload)
     atomic_write(os.path.join(root, to, "inbox", f"{mid}.json"), payload)
     return {"sent": mid, "to": to}
 
@@ -169,31 +150,11 @@ def tool_who(root, me, args):
     return {"agents": agents}
 
 
-def tool_thread(root, me, args):
-    a, b = args.get("a"), args.get("b")
-    if not a or not b:
-        raise ValueError("thread requires 'a' and 'b'")
-    pair = {a, b}
-    audit = os.path.join(root, AUDIT_DIR)
-    messages = []
-    if os.path.isdir(audit):
-        for n in sorted(x for x in os.listdir(audit) if x.endswith(".json")):
-            try:
-                with open(os.path.join(audit, n), encoding="utf-8") as f:
-                    m = json.load(f)
-            except (OSError, json.JSONDecodeError):
-                continue
-            if m.get("from") in pair and m.get("to") in pair:
-                messages.append(m)
-    return {"between": [a, b], "messages": messages, "count": len(messages)}
-
-
 HANDLERS = {
     "send": tool_send,
     "inbox": tool_inbox,
     "peek": tool_peek,
     "who": tool_who,
-    "thread": tool_thread,
 }
 
 

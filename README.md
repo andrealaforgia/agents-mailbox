@@ -28,8 +28,7 @@ only when it asks, so nothing runs in the background and there is no API cost.
    `mailbox` tools until you restart it. Agents started after registering see it
    straight away. (Check with `/mcp` inside a session.)
 
-3. **Use it.** Each agent now has these tools: `send`, `inbox`, `peek`, `who`,
-   `thread`.
+3. **Use it.** Each agent now has these tools: `send`, `inbox`, `peek`, `who`.
 
 ## Unregister an agent
 
@@ -39,9 +38,9 @@ only when it asks, so nothing runs in the background and there is no API cost.
 ```
 
 This detaches the `mailbox` tools from that agent (restart the agent for it to take
-effect). It leaves the mailbox data alone: the agent's `inbox/`/`read/` folders and
-the immutable `.audit/` log stay put. To also clear an agent's mailbox, delete its
-folder, e.g. `rm -rf ~/.agent-mailbox/alice`; the `.audit/` history is kept on purpose.
+effect). It leaves the mailbox data alone: the agent's `inbox/`/`read/` folders stay
+put. To also clear an agent's mailbox, delete its folder, e.g.
+`rm -rf ~/.agent-mailbox/alice`.
 
 ## A worked example
 
@@ -70,21 +69,29 @@ Alice calls `inbox()` and sees Bob's reply. That is the whole loop. Use `peek()`
 instead of `inbox()` if you want to read without marking messages read, and `who()`
 to list the agents that have a mailbox.
 
-## Auditing
+## Auditing (a separate concern)
 
-Every message is also copied to an immutable `.audit/` log that reads never touch, so
-the full history is always recoverable. A Communication Auditor agent can review what
-two agents exchanged and give each feedback:
+The mailbox knows nothing about auditing. A message is just a file in the shared
+folder, so auditing is something you do over those files, not a feature of the server.
+`audit.py` is a small read-only reader that reconstructs a conversation from the files
+on disk. It is not an MCP server and is never registered with an agent.
 
 ```
-thread(a="alice", b="bob")
--> the full two-way conversation, both directions, in time order
+python3 audit.py alice bob          # the alice<->bob conversation, in time order
+python3 audit.py --all              # every message
+python3 audit.py alice bob --json   # machine-readable
+```
 
+A Communication Auditor agent reads a thread this way (through its shell), then gives
+feedback using the ordinary mailbox `send` tool:
+
+```
 send(to="alice", body="AUDIT: clear and specific. Good.")
 send(to="bob",   body="AUDIT: prompt acknowledgement. Good.")
 ```
 
-The auditor's own feedback messages are logged too.
+Because the auditor only reads files and sends like any other agent, it owns nothing in
+the mailbox and the server stays unaware that auditing exists.
 
 ## Storage layout
 
@@ -93,12 +100,12 @@ Under the shared folder (default `~/.agent-mailbox`):
 ```
 <name>/inbox/   unread messages for <name>
 <name>/read/    messages <name> has read
-.audit/         immutable copy of every message ever sent
 ```
 
 A folder appears only when someone sends to that agent, so a pure sender or observer
-(such as an auditor) never gets a mailbox folder of its own. The full history still
-lives in `.audit/`, which is immutable and untouched by reads.
+(such as an auditor) never gets a mailbox folder of its own. Each message is a single
+file that moves from the recipient's `inbox/` to `read/` when read; the server never
+deletes it, so the traffic stays on disk for anything (such as `audit.py`) to inspect.
 
 Messages are small JSON files (`{id, from, to, ts, body}`) written atomically
 (temp file, fsync, rename) so a reader never sees a half-written message.

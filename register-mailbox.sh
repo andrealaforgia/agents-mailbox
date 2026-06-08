@@ -76,4 +76,4 @@ PYTHON="$(command -v python3 || true)"
 "$CLAUDE" mcp add mailbox -s "$SCOPE" -- "$PYTHON" "$SERVER" --as "$AGENT" --dir "$DIR"
 
 echo "registered 'mailbox' for agent '$AGENT' (scope: $SCOPE, folder: $DIR)"
-echo "tools available to this agent: send, inbox, peek, who, thread"
+echo "tools available to this agent: send, inbox, peek, who"
