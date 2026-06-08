@@ -12,9 +12,8 @@ only when it asks, so nothing runs in the background and there is no API cost.
    per agent, from inside that agent's project directory:
 
    ```
-   cd ~/work/alice   && /path/to/agents-mailbox/register-mailbox.sh alice
-   cd ~/work/bob     && /path/to/agents-mailbox/register-mailbox.sh bob
-   cd ~/work/auditor && /path/to/agents-mailbox/register-mailbox.sh auditor
+   cd ~/work/alice && /path/to/agents-mailbox/register-mailbox.sh alice
+   cd ~/work/bob   && /path/to/agents-mailbox/register-mailbox.sh bob
    ```
 
    You do not copy the script; call it by its absolute path. The default scope is
@@ -82,8 +81,10 @@ python3 audit.py --all              # every message
 python3 audit.py alice bob --json   # machine-readable
 ```
 
-A Communication Auditor agent reads a thread this way (through its shell), then gives
-feedback using the ordinary mailbox `send` tool:
+Reading a thread needs nothing registered, since `audit.py` just reads files. A
+Communication Auditor agent reads a thread this way (through its shell); to give
+feedback it registers the mailbox like any other agent and uses the ordinary `send`
+tool:
 
 ```
 send(to="alice", body="AUDIT: clear and specific. Good.")
